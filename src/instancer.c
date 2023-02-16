@@ -7,11 +7,8 @@ struct Arguments {
     char *fileName;
 };
 
-int main(int argc, char *argv[]) {
-    printf("struct-doc instancer\n");
-
-    struct Arguments args;
-    args.fileName = NULL;
+int fillArguments(int argc, char *argv[], struct Arguments *args) {
+    args->fileName = NULL;
 
     for (int i = 1; i < argc; i++) {
         if (strcmp(argv[i], ARG_IN_TEMPLATE) == 0) {
@@ -20,7 +17,7 @@ int main(int argc, char *argv[]) {
                 return 1;
             }
 
-            args.fileName = argv[i];
+            args->fileName = argv[i];
         }
         else {
             fprintf(stderr, "Invalid argument %s\n", argv[i]);
@@ -28,9 +25,21 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    if (args.fileName == NULL) {
+    if (args->fileName == NULL) {
         fprintf(stderr, "Missing argument " ARG_IN_TEMPLATE "\n");
         return 1;
+    }
+
+    return 0;
+}
+
+int main(int argc, char *argv[]) {
+    printf("struct-doc instancer\n");
+
+    struct Arguments args;
+    const int result = fillArguments(argc, argv, &args);
+    if (result != 0) {
+        return result;
     }
 
     printf("All fine so far\n");
