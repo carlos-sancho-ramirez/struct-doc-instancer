@@ -39,7 +39,13 @@ int fillArguments(int argc, char *argv[], struct Arguments *args) {
 
 #define PARSE_STATE_PARSING_TYPE 0
 #define PARSE_STATE_PARSING_NAME 1
-#define PARSE_STATE_LINE_FINISHED 2
+#define PARSE_STATE_PARSING_COUNT 2
+#define PARSE_STATE_COUNT_FINISHED 3
+#define PARSE_STATE_LINE_FINISHED 4
+
+int isCypherChar(char ch) {
+    return ch >= '0' && ch <= '9';
+}
 
 int isNameChar(char ch) {
     return ch >= 'A' && ch <= 'Z' || ch >= 'a' && ch <= 'z' || ch >= '0' && ch <= '9' || ch == '_';
@@ -52,21 +58,33 @@ int isSpaceChar(char ch) {
 struct ParserState {
     char typeBuffer[TYPE_BUFFER_SIZE];
     char nameBuffer[NAME_BUFFER_SIZE];
-    int typeBufferIndex;
-    int nameBufferIndex;
+    unsigned int typeBufferIndex;
+    unsigned int nameBufferIndex;
+    unsigned int count;
 
-    int line;
-    int column;
-    int state;
+    unsigned int line;
+    unsigned int column;
+    unsigned int state;
 };
 
 int parseChar(char ch, struct ParserState *state) {
-    if (isNameChar(ch)) {
+    if (ch == '0' && state->state == PARSE_STATE_PARSING_COUNT && state->count == 0) {
+        // For now, numbers starting with 0 are forbidden to allow future extensions for octal, hex, or any other kind
+        return 1;
+    }
+    else if (isCypherChar(ch) && state->state == PARSE_STATE_PARSING_COUNT) {
+        state->count = state->count * 10 + ch - '0';
+        ++state->column;
+    }
+    else if (isNameChar(ch)) {
         if (state->state == PARSE_STATE_PARSING_TYPE) {
             state->typeBuffer[state->typeBufferIndex++] = ch;
         }
         else if (state->state == PARSE_STATE_PARSING_NAME) {
             state->nameBuffer[state->nameBufferIndex++] = ch;
+        }
+        else if (state->state == PARSE_STATE_PARSING_COUNT) {
+            return 1;
         }
 
         ++state->column;
@@ -78,6 +96,9 @@ int parseChar(char ch, struct ParserState *state) {
         else if (state->state == PARSE_STATE_PARSING_NAME && state->nameBufferIndex > 0) {
             state->state = PARSE_STATE_LINE_FINISHED;
         }
+        else if (state->state == PARSE_STATE_PARSING_COUNT) {
+            state->state = PARSE_STATE_COUNT_FINISHED;
+        }
 
         ++state->column;
     }
@@ -85,21 +106,47 @@ int parseChar(char ch, struct ParserState *state) {
         if (state->state == PARSE_STATE_PARSING_TYPE && state->typeBufferIndex > 0 || state->state == PARSE_STATE_PARSING_NAME && state->nameBufferIndex == 0) {
             state->typeBuffer[state->typeBufferIndex] = '\0';
             // TODO: Format type
-            printf("%s _\n", state->typeBuffer);
+            if (state->count >= 2) {
+                printf("%s[%u] _\n", state->typeBuffer, state->count);
+            }
+            else {
+                printf("%s _\n", state->typeBuffer);
+            }
         }
         else if (state->state == PARSE_STATE_PARSING_NAME || state->state == PARSE_STATE_LINE_FINISHED) {
             state->typeBuffer[state->typeBufferIndex] = '\0';
             state->nameBuffer[state->nameBufferIndex] = '\0';
             // TODO: Format type
-            printf("%s %s\n", state->typeBuffer, state->nameBuffer);
+            if (state->count >= 2) {
+                printf("%s[%u] %s\n", state->typeBuffer, state->count, state->nameBuffer);
+            }
+            else {
+                printf("%s %s\n", state->typeBuffer, state->nameBuffer);
+            }
+        }
+        else if (state->state == PARSE_STATE_PARSING_COUNT || state->state == PARSE_STATE_COUNT_FINISHED) {
+            // ']' is expected before the end of the line
+            return 1;
         }
 
         state->typeBufferIndex = 0;
         state->nameBufferIndex = 0;
+        state->count = 0;
 
         ++state->line;
         state->column = 0;
         state->state = PARSE_STATE_PARSING_TYPE;
+    }
+    else if (ch == '[' && state->state == PARSE_STATE_PARSING_TYPE && state->typeBufferIndex > 0) {
+        state->state = PARSE_STATE_PARSING_COUNT;
+    }
+    else if (ch == ']' && (state->state == PARSE_STATE_PARSING_COUNT || state->state == PARSE_STATE_COUNT_FINISHED)) {
+        if (state->count <= 1) {
+            // Count must be 2 or more, if not, why defining a count?
+            return 1;
+        }
+
+        state->state = PARSE_STATE_PARSING_NAME;
     }
     else if (state->state != PARSE_STATE_LINE_FINISHED) {
         return 1;
@@ -125,6 +172,7 @@ int main(int argc, char *argv[]) {
     struct ParserState parserState;
     parserState.typeBufferIndex = 0;
     parserState.nameBufferIndex = 0;
+    parserState.count = 0;
 
     int bufferEnd = 0;
     parserState.line = 0;
