@@ -7,6 +7,7 @@
 #define BUFFER_SIZE 4096
 
 struct Arguments {
+    char *structName;
     char *fileName;
 };
 
@@ -33,6 +34,14 @@ int fillArguments(int argc, char *argv[], struct Arguments *args) {
         return 1;
     }
 
+    char *structName = strrchr(args->fileName, '/');
+    if (structName) {
+        args->structName = structName + 1;
+    }
+    else {
+        args->structName = args->fileName;
+    }
+
     return 0;
 }
 
@@ -48,6 +57,8 @@ int main(int argc, char *argv[]) {
         fprintf(stderr, "Unable to open file %s", args.fileName);
         return 1;
     }
+
+    startParse(args.structName);
 
     char buffer[BUFFER_SIZE];
     struct ParserState parserState;
@@ -75,6 +86,7 @@ int main(int argc, char *argv[]) {
         }
     }
 
+    finishParse();
     fclose(template);
     return 0;
 }

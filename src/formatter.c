@@ -21,6 +21,14 @@ static const char *find(struct TypeMapEntry *map, const char *inName) {
     return NULL;
 }
 
+int startStruct(const char *name) {
+    printf("struct %s {\n", name);
+}
+
+int finishStruct() {
+    printf("};\n");
+}
+
 int format(const struct StructEntry *entry) {
     struct TypeMapEntry *typeMap = malloc(sizeof(struct TypeMapEntry));
     typeMap->inName = "byte";
@@ -36,10 +44,10 @@ int format(const struct StructEntry *entry) {
         }
 
         if (entry->count >= 2) {
-            printf("%s[%u] %s\n", outType, entry->count, entry->name);
+            printf("    %s[%u] %s\n", outType, entry->count, entry->name);
         }
         else {
-            printf("%s %s\n", outType, entry->name);
+            printf("    %s %s\n", outType, entry->name);
         }
     }
 

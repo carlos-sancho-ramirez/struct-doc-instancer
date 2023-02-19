@@ -22,6 +22,8 @@ struct ParserState {
     unsigned int state;
 };
 
+int startParse(const char *structName);
+int finishParse();
 int parseChar(char ch, struct ParserState *state);
 
 #endif // _PARSER_H_

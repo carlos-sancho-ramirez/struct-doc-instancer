@@ -14,6 +14,14 @@ static int isSpaceChar(char ch) {
     return ch == ' ' || ch == '\t' || ch == '\r';
 }
 
+int startParse(const char *structName) {
+    startStruct(structName);
+}
+
+int finishParse() {
+    finishStruct();
+}
+
 int parseChar(char ch, struct ParserState *state) {
     if (ch == '0' && state->state == PARSE_STATE_PARSING_COUNT && state->count == 0) {
         // For now, numbers starting with 0 are forbidden to allow future extensions for octal, hex, or any other kind
