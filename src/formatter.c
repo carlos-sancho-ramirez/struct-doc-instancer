@@ -3,12 +3,6 @@
 #include <string.h>
 #include "formatter.h"
 
-struct TypeMapEntry {
-    const char *inName;
-    const char *outName;
-    struct TypeMapEntry *next;
-};
-
 static const char *find(struct TypeMapEntry *map, const char *inName) {
     while (map != NULL) {
         if (strcmp(inName, map->inName) == 0) {

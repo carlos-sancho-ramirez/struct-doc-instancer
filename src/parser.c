@@ -6,7 +6,7 @@ static int isCypherChar(char ch) {
     return ch >= '0' && ch <= '9';
 }
 
-static int isNameChar(char ch) {
+int isNameChar(char ch) {
     return ch >= 'A' && ch <= 'Z' || ch >= 'a' && ch <= 'z' || ch >= '0' && ch <= '9' || ch == '_';
 }
 
