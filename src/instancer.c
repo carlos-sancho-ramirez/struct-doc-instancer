@@ -159,7 +159,7 @@ int main(int argc, char *argv[]) {
         }
 
         for (int index = 0; index < bufferEnd; index++) {
-            if (parseChar(buffer[index], &parserState)) {
+            if (parseChar(buffer[index], &parserState, args.types)) {
                 fprintf(stderr, "Parse error at %d:%d\n", parserState.line, parserState.column);
                 fclose(template);
                 return 1;
@@ -169,5 +169,6 @@ int main(int argc, char *argv[]) {
 
     finishParse();
     fclose(template);
+    freeTypeMap(args.types);
     return 0;
 }

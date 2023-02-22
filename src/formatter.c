@@ -2,18 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "formatter.h"
-
-static const char *find(struct TypeMapEntry *map, const char *inName) {
-    while (map != NULL) {
-        if (strcmp(inName, map->inName) == 0) {
-            return map->outName;
-        }
-
-        map = map->next;
-    }
-
-    return NULL;
-}
+#include "basic_types.h"
 
 int startStruct(const char *name) {
     printf("struct %s {\n", name);
@@ -24,27 +13,34 @@ int finishStruct() {
 }
 
 int format(const struct StructEntry *entry) {
-    struct TypeMapEntry *typeMap = malloc(sizeof(struct TypeMapEntry));
-    typeMap->inName = "byte";
-    typeMap->outName = "char";
-    typeMap->next = NULL;
-
     if (entry->name != NULL) {
-        const char * const outType = find(typeMap, entry->type);
+        const int typeId = entry->typeId;
+        const char *outType = NULL;
+        if (typeId == BASIC_TYPE_ID_BYTE) {
+            outType = "char";
+        }
+        else if (typeId == BASIC_TYPE_ID_WORD16_LE || typeId == BASIC_TYPE_ID_WORD16_BE) {
+            outType = "short";
+        }
+        else if (typeId == BASIC_TYPE_ID_WORD32_LE || typeId == BASIC_TYPE_ID_WORD32_BE) {
+            outType = "int";
+        }
+        else if (typeId == BASIC_TYPE_ID_WORD64_LE || typeId == BASIC_TYPE_ID_WORD64_BE) {
+            outType = "long";
+        }
+
         if (outType == NULL) {
-            fprintf(stderr, "Undefined type %s", entry->type);
-            free(typeMap);
+            fprintf(stderr, "Undefined type identifier %u\n", entry->typeId);
             return 1;
         }
 
         if (entry->count >= 2) {
-            printf("    %s[%u] %s\n", outType, entry->count, entry->name);
+            printf("    %s[%u] %s;\n", outType, entry->count, entry->name);
         }
         else {
-            printf("    %s %s\n", outType, entry->name);
+            printf("    %s %s;\n", outType, entry->name);
         }
     }
 
-    free(typeMap);
     return 0;
 }

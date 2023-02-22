@@ -4,7 +4,7 @@
 #include "type_map.h"
 
 struct StructEntry {
-    char *type;
+    int typeId;
     char *name;
     unsigned int count;
 };
