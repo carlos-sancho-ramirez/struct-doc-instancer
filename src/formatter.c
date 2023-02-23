@@ -13,8 +13,8 @@ int finishStruct() {
 }
 
 int format(const struct StructEntry *entry) {
-    if (entry->name != NULL) {
-        const int typeId = entry->typeId;
+    const int typeId = entry->typeId;
+    if (entry->name != NULL && typeId != BASIC_TYPE_ID_VOID) {
         const char *outType = NULL;
         if (typeId == BASIC_TYPE_ID_BYTE) {
             outType = "char";

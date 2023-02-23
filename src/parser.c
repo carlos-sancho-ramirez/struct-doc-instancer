@@ -86,7 +86,10 @@ int parseChar(char ch, struct ParserState *state, const struct TypeMapEntry *typ
             }
 
             struct StructEntry entry;
-            if (!strcmp(resolvedType, basicTypeByte)) {
+            if (!strcmp(resolvedType, basicTypeVoid)) {
+                entry.typeId = BASIC_TYPE_ID_VOID;
+            }
+            else if (!strcmp(resolvedType, basicTypeByte)) {
                 entry.typeId = BASIC_TYPE_ID_BYTE;
             }
             else if (!strcmp(resolvedType, basicTypeWord16LE)) {
