@@ -146,7 +146,9 @@ int parseChar(char ch, struct ParserState *state, const struct TypeMapEntry *typ
 
         ++state->line;
         state->column = 0;
-        state->state = PARSE_STATE_PARSING_TYPE;
+        if (state->state != PARSE_STATE_CONSTRAINTS_REACHED) {
+            state->state = PARSE_STATE_PARSING_TYPE;
+        }
     }
     else if (ch == '[' && state->state == PARSE_STATE_PARSING_TYPE && state->typeBufferIndex > 0) {
         state->state = PARSE_STATE_PARSING_COUNT;
@@ -161,6 +163,12 @@ int parseChar(char ch, struct ParserState *state, const struct TypeMapEntry *typ
     }
     else if (ch == '>' && state->state == PARSE_STATE_PARSING_TYPE && state->typeBufferIndex == 0) {
         state->state = PARSE_STATE_PARSING_TYPE_DEFINITION;
+    }
+    else if (ch == ':' && state->state == PARSE_STATE_PARSING_TYPE && state->typeBufferIndex == 0) {
+        state->state = PARSE_STATE_CONSTRAINTS_REACHED;
+    }
+    else if (state->state == PARSE_STATE_CONSTRAINTS_REACHED) {
+        ++state->column;
     }
     else if (state->state != PARSE_STATE_LINE_FINISHED) {
         return 1;
