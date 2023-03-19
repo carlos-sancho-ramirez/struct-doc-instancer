@@ -167,6 +167,9 @@ int parseChar(char ch, struct ParserState *state, const struct TypeMapEntry *typ
     else if (ch == ':' && state->state == PARSE_STATE_PARSING_TYPE && state->typeBufferIndex == 0) {
         state->state = PARSE_STATE_CONSTRAINTS_REACHED;
     }
+    else if (ch == '#' && state->state == PARSE_STATE_PARSING_TYPE) {
+        state->state = PARSE_STATE_LINE_FINISHED;
+    }
     else if (state->state == PARSE_STATE_CONSTRAINTS_REACHED) {
         ++state->column;
     }
