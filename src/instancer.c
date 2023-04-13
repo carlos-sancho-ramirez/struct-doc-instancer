@@ -3,16 +3,29 @@
 #include <stdlib.h>
 #include "type_map.h"
 #include "parser.h"
+#include "formatters/c_struct.h"
+#include "formatters/c_parser_implementation.h"
 
 #define ARG_IN_TEMPLATE "--in-template"
 #define ARG_IN_TYPES    "--in-types"
+#define ARG_FORMATTER   "--formatter"
+
+#define ARG_FORMATTER_C_STRUCT                "c-struct"
+#define ARG_FORMATTER_C_PARSER_IMPLEMENTATION "c-parser-implementation"
 
 #define BUFFER_SIZE 4096
+
+struct Formatter {
+    int (* start)(const char *);
+    int (* finish)();
+    int (* format)(const struct StructEntry *);
+};
 
 struct Arguments {
     char *structName;
     char *fileName;
     struct TypeMapEntry *types;
+    struct Formatter formatter;
 };
 
 #define EXTRACT_TYPES_STATE_READING_KEY 0
@@ -84,6 +97,9 @@ static int extractTypes(const char *typesArg, struct TypeMapEntry **mapPointer) 
 int fillArguments(int argc, char *argv[], struct Arguments *args) {
     args->fileName = NULL;
     args->types = NULL;
+    args->formatter.start = startStruct;
+    args->formatter.finish = finishStruct;
+    args->formatter.format = formatStruct;
 
     for (int i = 1; i < argc; i++) {
         if (strcmp(argv[i], ARG_IN_TEMPLATE) == 0) {
@@ -101,6 +117,29 @@ int fillArguments(int argc, char *argv[], struct Arguments *args) {
             }
 
             if (extractTypes(argv[i], &args->types)) {
+                return 1;
+            }
+        }
+        else if (strcmp(argv[i], ARG_FORMATTER) == 0) {
+            if (++i == argc) {
+                fprintf(stderr, "Formatter name expected after " ARG_FORMATTER "\n");
+                return 1;
+            }
+
+            if (strcmp(argv[i], ARG_FORMATTER_C_STRUCT) == 0) {
+                args->formatter.start = startStruct;
+                args->formatter.finish = finishStruct;
+                args->formatter.format = formatStruct;
+            }
+            else if (strcmp(argv[i], ARG_FORMATTER_C_PARSER_IMPLEMENTATION) == 0) {
+                args->formatter.start = startParserImplementation;
+                args->formatter.finish = finishParserImplementation;
+                args->formatter.format = formatParserImplementation;
+            }
+            else {
+                fprintf(stderr, "Unknown formatter %s\nValid formatters are:\n", argv[i]);
+                fprintf(stderr, "  " ARG_FORMATTER_C_PARSER_IMPLEMENTATION "\n");
+                fprintf(stderr, "  " ARG_FORMATTER_C_STRUCT " (default)\n");
                 return 1;
             }
         }
@@ -139,7 +178,7 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    startParse(args.structName);
+    args.formatter.start(args.structName);
 
     char buffer[BUFFER_SIZE];
     struct ParserState parserState;
@@ -159,7 +198,7 @@ int main(int argc, char *argv[]) {
         }
 
         for (int index = 0; index < bufferEnd; index++) {
-            if (parseChar(buffer[index], &parserState, args.types)) {
+            if (parseChar(args.formatter.format, buffer[index], &parserState, args.types)) {
                 fprintf(stderr, "Parse error at %d:%d\n", parserState.line, parserState.column);
                 fclose(template);
                 return 1;
@@ -167,7 +206,7 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    finishParse();
+    args.formatter.finish();
     fclose(template);
     freeTypeMap(args.types);
     return 0;

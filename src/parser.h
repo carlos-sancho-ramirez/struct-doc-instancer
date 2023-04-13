@@ -1,6 +1,6 @@
 #ifndef _PARSER_H_
 #define _PARSER_H_
-#include "type_map.h"
+#include "formatter.h"
 
 #define TYPE_BUFFER_SIZE 128
 #define NAME_BUFFER_SIZE 128
@@ -27,8 +27,6 @@ struct ParserState {
 
 int isNameChar(char ch);
 
-int startParse(const char *structName);
-int finishParse();
-int parseChar(char ch, struct ParserState *state, const struct TypeMapEntry *types);
+int parseChar(int (* format)(const struct StructEntry *), char ch, struct ParserState *state, const struct TypeMapEntry *types);
 
 #endif // _PARSER_H_

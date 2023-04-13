@@ -17,15 +17,7 @@ static int isSpaceChar(char ch) {
     return ch == ' ' || ch == '\t' || ch == '\r';
 }
 
-int startParse(const char *structName) {
-    startStruct(structName);
-}
-
-int finishParse() {
-    finishStruct();
-}
-
-int parseChar(char ch, struct ParserState *state, const struct TypeMapEntry *types) {
+int parseChar(int (* format)(const struct StructEntry *), char ch, struct ParserState *state, const struct TypeMapEntry *types) {
     if (ch == '0' && state->state == PARSE_STATE_PARSING_COUNT && state->count == 0) {
         // For now, numbers starting with 0 are forbidden to allow future extensions for octal, hex, or any other kind
         return 1;
@@ -72,7 +64,7 @@ int parseChar(char ch, struct ParserState *state, const struct TypeMapEntry *typ
         ++state->column;
     }
     else if (ch == '\n') {
-        if ((state->state == PARSE_STATE_PARSING_NAME || state->state == PARSE_STATE_LINE_FINISHED) && (state->nameBufferIndex >= 2 || state->nameBufferIndex == 1 && state->nameBuffer[0] != '_')) {
+        if ((state->state == PARSE_STATE_PARSING_NAME || state->state == PARSE_STATE_LINE_FINISHED) && state->nameBufferIndex >= 1) {
             state->typeBuffer[state->typeBufferIndex] = '\0';
             state->nameBuffer[state->nameBufferIndex] = '\0';
 
@@ -115,7 +107,13 @@ int parseChar(char ch, struct ParserState *state, const struct TypeMapEntry *typ
                 return 1;
             }
 
-            entry.name = state->nameBuffer;
+            if (state->nameBufferIndex >= 1 && state->nameBuffer[0] == '_') {
+                entry.name = NULL;
+            }
+            else {
+                entry.name = state->nameBuffer;
+            }
+
             entry.count = state->count;
             if (format(&entry)) {
                 return 1;

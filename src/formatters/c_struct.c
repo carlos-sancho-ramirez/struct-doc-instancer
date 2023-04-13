@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "formatter.h"
-#include "basic_types.h"
+#include "c_struct.h"
+#include "../basic_types.h"
 
 int startStruct(const char *name) {
     printf("struct %s {\n", name);
@@ -12,9 +12,9 @@ int finishStruct() {
     printf("};\n");
 }
 
-int format(const struct StructEntry *entry) {
+int formatStruct(const struct StructEntry *entry) {
     const int typeId = entry->typeId;
-    if (entry->name != NULL && typeId != BASIC_TYPE_ID_VOID) {
+    if (entry->name && typeId != BASIC_TYPE_ID_VOID) {
         const char *outType = NULL;
         if (typeId == BASIC_TYPE_ID_BYTE) {
             outType = "char";
